@@ -231,6 +231,4 @@ async function trackToAllPlatforms(event, user) {
 - **Meta Conversions API**: https://developers.facebook.com/docs/marketing-api/conversions-api
 - **TikTok Events API**: https://ads.tiktok.com/marketing_api/docs?id=1741601162187777
 
-**POC Repository**: This implementation includes working code for all platforms with full TypeScript support.
-
-**Server examples**: See the checkout and purchase routes in `server.cjs` for how to integrate tracking into your existing e-commerce routes.
+**POC Repository**: [https://github.com/kennyfrc/tracking-poc-axmit/](https://github.com/kennyfrc/tracking-poc-axmit/)

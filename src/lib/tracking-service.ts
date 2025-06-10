@@ -3,7 +3,7 @@ import { initializeGoogleTag, generateEventId, getClientId } from './gtag';
 import { initializeMetaPixel } from './meta-pixel';
 import { initializeTikTokPixel } from './tiktok-pixel';
 
-// Simplified configuration - no consent needed
+// Simplified configuration
 export interface TrackingServiceConfig {
   ga4?: {
     measurementId: string;

@@ -302,6 +302,7 @@ export function DemoEcommerce() {
           max-width: 1200px;
           margin: 0 auto;
           padding: 20px;
+          color: #333;
         }
 
         .section {
@@ -309,10 +310,12 @@ export function DemoEcommerce() {
           padding: 20px;
           background: #f5f5f5;
           border-radius: 8px;
+          color: #333;
         }
 
         .section h3 {
           margin-top: 0;
+          color: #333;
         }
 
         .products-grid {
@@ -326,10 +329,12 @@ export function DemoEcommerce() {
           padding: 15px;
           border-radius: 8px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          color: #333;
         }
 
         .product-card h4 {
           margin: 0 0 10px 0;
+          color: #333;
         }
 
         .product-card .brand {
@@ -370,6 +375,7 @@ export function DemoEcommerce() {
           border-radius: 8px;
           padding: 15px;
           margin-bottom: 20px;
+          color: #333;
         }
 
         .cart-item {
@@ -386,6 +392,7 @@ export function DemoEcommerce() {
 
         .item-info h4 {
           margin: 0 0 5px 0;
+          color: #333;
         }
 
         .item-info p {
@@ -424,6 +431,7 @@ export function DemoEcommerce() {
           padding: 15px;
           border-radius: 8px;
           text-align: right;
+          color: #333;
         }
 
         .coupon-section {
@@ -471,6 +479,7 @@ export function DemoEcommerce() {
           padding: 15px;
           border-radius: 8px;
           margin-bottom: 20px;
+          color: #333;
         }
 
         .info-section {
@@ -483,6 +492,7 @@ export function DemoEcommerce() {
           padding: 15px;
           border-radius: 8px;
           margin-top: 10px;
+          color: #333;
         }
 
         .info-content code {
@@ -502,6 +512,7 @@ export function DemoEcommerce() {
           border-radius: 8px;
           max-height: 300px;
           overflow-y: auto;
+          color: #333;
         }
 
         .log-entry {
@@ -509,6 +520,7 @@ export function DemoEcommerce() {
           font-family: monospace;
           font-size: 14px;
           border-bottom: 1px solid #eee;
+          color: #333;
         }
 
         .log-entry:last-child {

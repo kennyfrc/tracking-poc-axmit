@@ -66,7 +66,6 @@ export interface UserData {
 export interface ServerEventPayload {
   event: TrackingEvent;
   user: UserData;
-  consent?: ConsentState;
 }
 
 // Platform-specific event names mapping
@@ -88,14 +87,6 @@ export const EVENT_NAME_MAPPING = {
   }
 } as const;
 
-// Consent states for GDPR compliance
-export interface ConsentState {
-  ad_storage: 'granted' | 'denied';
-  analytics_storage: 'granted' | 'denied';
-  ad_user_data: 'granted' | 'denied';
-  ad_personalization: 'granted' | 'denied';
-}
-
 // Google Tag (gtag) types
 export interface GtagConfig {
   send_page_view?: boolean;
@@ -103,13 +94,12 @@ export interface GtagConfig {
   [key: string]: any;
 }
 
-export type GtagCommand = 'js' | 'config' | 'event' | 'consent' | 'set';
+export type GtagCommand = 'js' | 'config' | 'event' | 'set';
 
 export type GtagArgs = 
   | ['js', Date]
   | ['config', string, GtagConfig?]
   | ['event', string, any?]
-  | ['consent', 'default' | 'update', ConsentState]
   | ['set', any];
 
 // Type guard functions

@@ -1,4 +1,4 @@
-import type { GtagArgs, TrackingEvent, ConsentState, EVENT_NAME_MAPPING } from '../types/tracking';
+import type { GtagArgs, TrackingEvent, EVENT_NAME_MAPPING } from '../types/tracking';
 
 // Extend Window interface to include dataLayer and gtag
 declare global {
@@ -44,28 +44,9 @@ export function initializeGoogleTag(measurementId: string): void {
   const gtagFn = window.gtag || gtag;
   gtagFn('js', new Date());
 
-  // Set default consent state (denied by default for GDPR compliance)
-  gtagFn('consent', 'default', {
-    ad_storage: 'denied',
-    analytics_storage: 'denied',
-    ad_user_data: 'denied',
-    ad_personalization: 'denied'
-  });
-
   // Configure measurement ID
   gtagFn('config', measurementId, {
     send_page_view: true
-  });
-}
-
-// Update consent state when user opts in
-export function updateConsent(consentState: Partial<ConsentState>): void {
-  const gtagFn = window.gtag || gtag;
-  gtagFn('consent', 'update', {
-    ad_storage: consentState.ad_storage || 'denied',
-    analytics_storage: consentState.analytics_storage || 'denied',
-    ad_user_data: consentState.ad_user_data || 'denied',
-    ad_personalization: consentState.ad_personalization || 'denied'
   });
 }
 

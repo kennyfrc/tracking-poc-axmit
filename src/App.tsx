@@ -39,7 +39,6 @@ function Home() {
           <li>✅ Google Analytics 4 (gtag.js) integration</li>
           <li>✅ Meta Pixel integration</li>
           <li>✅ TikTok Pixel integration</li>
-          <li>✅ GDPR-compliant consent management</li>
           <li>✅ Event deduplication support</li>
           <li>✅ React hooks for easy integration</li>
           <li>✅ E-commerce event tracking (add to cart, checkout, purchase)</li>

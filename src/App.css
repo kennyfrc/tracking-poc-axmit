@@ -1,0 +1,175 @@
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Navbar styles */
+.navbar {
+  background: #333;
+  color: white;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.nav-links a:hover {
+  opacity: 0.8;
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  background: #f8f9fa;
+}
+
+/* Page styles */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page h1 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.page p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+/* Features section */
+.features {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.features h2 {
+  margin-top: 0;
+  color: #333;
+}
+
+.features ul {
+  list-style: none;
+  padding: 0;
+}
+
+.features li {
+  padding: 0.5rem 0;
+  font-size: 1rem;
+  color: #555;
+}
+
+/* Config status section */
+.config-status {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.config-status h2 {
+  margin-top: 0;
+  color: #333;
+}
+
+.config-status ul {
+  list-style: none;
+  padding: 0;
+}
+
+.config-status li {
+  padding: 0.5rem 0;
+  font-size: 1rem;
+  color: #555;
+}
+
+/* Navigation section */
+.navigation {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.demo-link {
+  display: inline-block;
+  background: #0066cc;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.demo-link:hover {
+  background: #0052a3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-content {
+    padding: 1rem;
+  }
+  
+  .nav-brand {
+    font-size: 1.2rem;
+  }
+  
+  .nav-links {
+    gap: 1rem;
+  }
+  
+  .page {
+    padding: 1rem;
+  }
+  
+  .features, .config-status {
+    padding: 1rem;
+  }
+}

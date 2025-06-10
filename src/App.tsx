@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { TrackingProvider } from './hooks/useTracking';
-import { ConsentBanner } from './components/ConsentBanner';
 import { DemoEcommerce } from './components/DemoEcommerce';
 import type { TrackingServiceConfig } from './lib/tracking-service';
 import './App.css';
@@ -89,8 +88,6 @@ function App() {
               <Route path="/demo" element={<DemoEcommerce />} />
             </Routes>
           </main>
-
-          <ConsentBanner />
         </div>
       </BrowserRouter>
     </TrackingProvider>

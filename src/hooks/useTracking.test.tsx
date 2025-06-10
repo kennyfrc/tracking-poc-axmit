@@ -9,6 +9,7 @@ describe('useTracking', () => {
     ga4: {
       measurementId: 'G-TEST123'
     },
+    serverEndpoint: 'http://localhost:3001/api/track',
     debug: true
   };
 
@@ -17,7 +18,6 @@ describe('useTracking', () => {
     // Reset trackingService state by mocking isInitialized
     vi.spyOn(trackingService, 'isInitialized').mockReturnValue(false);
     vi.spyOn(trackingService, 'initialize').mockImplementation(() => {});
-    vi.spyOn(trackingService, 'updateConsent').mockImplementation(() => {});
     vi.spyOn(trackingService, 'setUserData').mockImplementation(() => {});
     vi.spyOn(trackingService, 'trackAddToCart').mockResolvedValue(undefined);
     vi.spyOn(trackingService, 'trackBeginCheckout').mockResolvedValue(undefined);
@@ -46,54 +46,6 @@ describe('useTracking', () => {
       });
 
       expect(trackingService.initialize).toHaveBeenCalledWith(mockConfig);
-    });
-  });
-
-  describe('consent management', () => {
-    it('should update consent', () => {
-      const { result } = renderHook(() => useTracking());
-      
-      act(() => {
-        result.current.updateConsent({
-          ad_storage: 'granted',
-          analytics_storage: 'granted'
-        });
-      });
-
-      expect(trackingService.updateConsent).toHaveBeenCalledWith({
-        ad_storage: 'granted',
-        analytics_storage: 'granted'
-      });
-    });
-
-    it('should accept all tracking', () => {
-      const { result } = renderHook(() => useTracking());
-      
-      act(() => {
-        result.current.acceptAllTracking();
-      });
-
-      expect(trackingService.updateConsent).toHaveBeenCalledWith({
-        ad_storage: 'granted',
-        analytics_storage: 'granted',
-        ad_user_data: 'granted',
-        ad_personalization: 'granted'
-      });
-    });
-
-    it('should reject all tracking', () => {
-      const { result } = renderHook(() => useTracking());
-      
-      act(() => {
-        result.current.rejectAllTracking();
-      });
-
-      expect(trackingService.updateConsent).toHaveBeenCalledWith({
-        ad_storage: 'denied',
-        analytics_storage: 'denied',
-        ad_user_data: 'denied',
-        ad_personalization: 'denied'
-      });
     });
   });
 
@@ -202,6 +154,7 @@ describe('TrackingProvider', () => {
     ga4: {
       measurementId: 'G-TEST123'
     },
+    serverEndpoint: 'http://localhost:3001/api/track',
     debug: true
   };
 

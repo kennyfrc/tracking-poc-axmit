@@ -19,17 +19,23 @@ React (client-side)
  ├─ Meta Pixel base pixel         – pageviews only  
  └─ TikTok Pixel base pixel       – pageviews only
      ↓
-     ↓ ALL conversion events sent to ↓
+     ↓ add_to_cart events (optional)
      ↓
-Node.js/Express Server (port 3001)
- ├─ Receives events from React app
- ├─ Hashes PII data (email/phone)
- ├─ Sends to GA4 Measurement Protocol
- ├─ Sends to Meta Conversions API
- └─ Sends to TikTok Events API
+Node.js/Express Server
+ ├─ /api/track                    – ONLY handles: page_view, add_to_cart
+ ├─ /api/checkout                 – YOUR checkout route → tracks begin_checkout
+ ├─ /api/purchase/complete        – YOUR purchase route → tracks purchase
+ │
+ └─ All routes send to:
+     ├─ GA4 Measurement Protocol (with PII hashing)
+     ├─ Meta Conversions API (with PII hashing)
+     └─ TikTok Events API (with PII hashing)
 ```
 
-**Key insight**: Client-side pixels are ONLY for pageviews. ALL conversion events (add to cart, checkout, purchase) MUST go through your server.
+**Key insight**: In real applications:
+- **add_to_cart**: Can be tracked from frontend (for SPAs) OR server (for traditional apps)
+- **begin_checkout**: ALWAYS tracked from your server's checkout route
+- **purchase**: ALWAYS tracked from your server's payment completion route
 
 ---
 
@@ -47,7 +53,7 @@ Node.js/Express Server (port 3001)
 
 #### 4. Implementation Steps
 
-##### 4.1 Client-side (React) - Base pixels only
+##### 4.1 Client-side (React) - Base pixels and optional add_to_cart
 
 ```javascript
 // Initialize base pixels for pageview tracking ONLY
@@ -55,48 +61,84 @@ initializeGoogleTag(GA_MEASUREMENT_ID);
 initializeMetaPixel(META_PIXEL_ID);
 initializeTikTokPixel(TIKTOK_PIXEL_ID);
 
-// Send ALL events to your server
-async function trackPurchase(orderData) {
+// OPTIONAL: Track add to cart from frontend (for SPAs)
+async function trackAddToCart(product) {
   await fetch('http://your-server.com/api/track', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       event: {
-        event_name: 'purchase',
-        transaction_id: orderData.id,
-        value: orderData.total,
+        event_name: 'add_to_cart',
+        value: product.price,
         currency: 'PHP',
-        items: orderData.items
+        items: [product]
       },
       user: {
-        email: orderData.customer.email,
-        phone: orderData.customer.phone
+        email: currentUser.email,
+        phone: currentUser.phone
       }
     })
   });
 }
 ```
 
-##### 4.2 Server-side (Node.js/Express) - All conversion tracking
+##### 4.2 Server-side (Node.js/Express) - Where conversion tracking actually happens
 
 ```javascript
-// server.js - This is where ALL conversion tracking happens
-app.post('/api/track', async (req, res) => {
-  const { event, user } = req.body;
+// Your existing checkout route
+app.post('/api/checkout', async (req, res) => {
+  const { items, user } = req.body;
   
-  // Hash PII before sending
+  // Your checkout logic...
+  const checkoutSession = await createCheckoutSession(items);
+  
+  // Track begin_checkout event
+  const event = {
+    event_name: 'begin_checkout',
+    event_id: generateEventId(),
+    currency: 'PHP',
+    value: calculateTotal(items),
+    items: items
+  };
+  
+  await trackToAllPlatforms(event, user);
+  
+  res.json({ sessionId: checkoutSession.id });
+});
+
+// Your existing purchase completion route  
+app.post('/api/purchase/complete', async (req, res) => {
+  const { orderId, paymentId, items, user } = req.body;
+  
+  // Verify payment and create order...
+  const order = await completeOrder(orderId, paymentId);
+  
+  // Track purchase event
+  const event = {
+    event_name: 'purchase',
+    event_id: generateEventId(),
+    transaction_id: orderId,
+    currency: 'PHP',
+    value: order.total,
+    items: items
+  };
+  
+  await trackToAllPlatforms(event, user);
+  
+  res.json({ order });
+});
+
+// Helper function used by your routes
+async function trackToAllPlatforms(event, user) {
   const hashedEmail = sha256(user.email);
   const hashedPhone = sha256(user.phone);
   
-  // Send to all platforms in parallel
   await Promise.all([
     sendToGA4(event, hashedEmail, hashedPhone),
     sendToMeta(event, hashedEmail, hashedPhone),
     sendToTikTok(event, hashedEmail, hashedPhone)
   ]);
-  
-  res.json({ success: true });
-});
+}
 ```
 
 ---
@@ -152,7 +194,7 @@ app.post('/api/track', async (req, res) => {
   - [ ] Route all events through your server endpoint
 
 - [ ] **Server-side setup**
-  - [ ] Copy `server-simple.js` as starting point
+  - [ ] Copy `server.cjs` as starting point
   - [ ] Add to `.env`:
     ```
     VITE_GA_MEASUREMENT_ID=G-XXXXXXXX
@@ -190,3 +232,5 @@ app.post('/api/track', async (req, res) => {
 - **TikTok Events API**: https://ads.tiktok.com/marketing_api/docs?id=1741601162187777
 
 **POC Repository**: This implementation includes working code for all platforms with full TypeScript support.
+
+**Server examples**: See the checkout and purchase routes in `server.cjs` for how to integrate tracking into your existing e-commerce routes.

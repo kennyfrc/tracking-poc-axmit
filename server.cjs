@@ -211,14 +211,50 @@ async function sendToTikTok(event, userData) {
   }
 }
 
-// Main tracking endpoint
+// Helper function to track events internally from server routes
+async function trackServerEvent(event, userData, req) {
+  // Get real IP and user agent from request
+  const enrichedUser = {
+    ...userData,
+    ip_address: req.headers['x-forwarded-for'] || req.connection.remoteAddress || '127.0.0.1',
+    user_agent: req.headers['user-agent'] || 'Unknown'
+  };
+
+  console.log(`\n📨 Server Event: ${event.event_name} | ID: ${event.event_id} | Value: ₱${event.value}`);
+
+  // Send to all platforms
+  const [ga4Result, metaResult, tiktokResult] = await Promise.allSettled([
+    sendToGA4(event, enrichedUser),
+    sendToMeta(event, enrichedUser),
+    sendToTikTok(event, enrichedUser)
+  ]);
+
+  return {
+    event_id: event.event_id,
+    ga4: ga4Result.value || { success: false, error: ga4Result.reason },
+    meta: metaResult.value || { success: false, error: metaResult.reason },
+    tiktok: tiktokResult.value || { success: false, error: tiktokResult.reason }
+  };
+}
+
+// ===== ROUTES =====
+
+// Frontend tracking endpoint - ONLY for pageview and add_to_cart
 app.post('/api/track', async (req, res) => {
   const { event, user } = req.body;
+  
+  // Only allow pageview and add_to_cart from frontend
+  const allowedEvents = ['page_view', 'add_to_cart'];
+  if (!allowedEvents.includes(event.event_name)) {
+    return res.status(400).json({ 
+      error: `Event '${event.event_name}' not allowed from frontend. Use server routes for checkout/purchase.` 
+    });
+  }
   
   // Get real IP
   user.ip_address = req.headers['x-forwarded-for'] || req.connection.remoteAddress || '127.0.0.1';
   
-  console.log(`\n📨 Event: ${event.event_name} | ID: ${event.event_id} | Value: ₱${event.value}`);
+  console.log(`\n📨 Frontend Event: ${event.event_name} | ID: ${event.event_id} | Value: ₱${event.value || 0}`);
 
   // Send to all platforms in parallel
   const [ga4Result, metaResult, tiktokResult] = await Promise.allSettled([
@@ -243,6 +279,64 @@ app.post('/api/track', async (req, res) => {
   res.json(response);
 });
 
+// ===== EXAMPLE: Real-world e-commerce routes =====
+
+// Example: Checkout route (begin_checkout event)
+app.post('/api/checkout', async (req, res) => {
+  const { items, user } = req.body;
+  
+  // Your checkout logic here...
+  // e.g., validate items, calculate totals, create checkout session
+  
+  // Track the checkout event
+  const event = {
+    event_name: 'begin_checkout',
+    event_id: crypto.randomBytes(16).toString('hex'),
+    currency: 'PHP',
+    value: items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+    items: items,
+    timestamp: Date.now()
+  };
+  
+  await trackServerEvent(event, user, req);
+  
+  // Return checkout session or redirect URL
+  res.json({
+    checkoutId: 'checkout_' + Date.now(),
+    message: 'Checkout session created',
+    // ... other checkout data
+  });
+});
+
+// Example: Purchase completion route (purchase event)
+app.post('/api/purchase/complete', async (req, res) => {
+  const { orderId, paymentId, items, user } = req.body;
+  
+  // Your purchase completion logic here...
+  // e.g., verify payment, update inventory, create order record
+  
+  // Track the purchase event
+  const event = {
+    event_name: 'purchase',
+    event_id: crypto.randomBytes(16).toString('hex'),
+    transaction_id: orderId,
+    currency: 'PHP',
+    value: items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+    items: items,
+    timestamp: Date.now()
+  };
+  
+  await trackServerEvent(event, user, req);
+  
+  // Return order confirmation
+  res.json({
+    orderId: orderId,
+    status: 'completed',
+    message: 'Thank you for your purchase!',
+    // ... other order details
+  });
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ 
@@ -254,6 +348,19 @@ app.get('/health', (req, res) => {
     }
   });
 });
+
+// ===== BEST PRACTICES =====
+/**
+ * 1. The /api/track endpoint ONLY handles page_view and add_to_cart events
+ * 2. checkout and purchase events MUST be tracked from your actual business routes
+ * 3. Always include event_id for deduplication
+ * 4. Hash all PII (email, phone) before sending
+ * 5. Track events where they naturally occur in your business logic
+ * 6. Don't wait for tracking to complete before responding to users
+ * 7. Include as much product detail as possible
+ * 8. Use consistent currency codes (PHP for Philippines)
+ * 9. Log tracking errors but don't let them break your checkout flow
+ */
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Server running on http://localhost:${PORT}`);

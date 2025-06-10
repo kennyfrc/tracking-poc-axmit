@@ -58,14 +58,17 @@ React App (Client-Side)
  ├─ Meta Pixel base pixel         – pageviews only  
  └─ TikTok Pixel base pixel       – pageviews only
      ↓
-     ↓ ALL conversion events sent to ↓
+     ↓ add_to_cart events (optional)
      ↓
-Node.js/Express Server (port 3001)
- ├─ Receives events from React app
- ├─ Hashes PII data (email/phone)
- ├─ Sends to GA4 Measurement Protocol
- ├─ Sends to Meta Conversions API
- └─ Sends to TikTok Events API
+Node.js/Express Server
+ ├─ /api/track                    – ONLY handles: page_view, add_to_cart
+ ├─ /api/checkout                 – YOUR checkout route → tracks begin_checkout
+ ├─ /api/purchase/complete        – YOUR purchase route → tracks purchase
+ │
+ └─ All routes send to:
+     ├─ GA4 Measurement Protocol (with SHA256 hashing)
+     ├─ Meta Conversions API (with SHA256 hashing)
+     └─ TikTok Events API (with SHA256 hashing)
 ```
 
 ### Client-Side Files (React)
@@ -76,7 +79,7 @@ src/
 │   ├── gtag.ts                # Google Analytics 4 base pixel
 │   ├── meta-pixel.ts          # Meta/Facebook base pixel  
 │   ├── tiktok-pixel.ts        # TikTok base pixel
-│   └── tracking-service-simple.ts  # Sends ALL events to server
+│   └── tracking-service.ts    # Sends ALL events to server
 ├── hooks/
 │   └── useTracking.ts         # React hooks for tracking
 ├── components/
@@ -86,47 +89,102 @@ src/
 
 ### Server-Side (Node.js/Express)
 ```
-server-simple.cjs              # Express server that:
-├── Receives events from client
-├── Hashes PII with SHA256
-├── Sends to GA4 Measurement Protocol
-├── Sends to Meta Conversions API
-└── Sends to TikTok Events API
+server.cjs                       # Express server that:
+├── /api/track                   # Handles page_view and add_to_cart only
+├── /api/checkout                # Example checkout route (tracks begin_checkout)
+├── /api/purchase/complete       # Example purchase route (tracks purchase)
+└── All routes:
+    ├── Hash PII with SHA256
+    ├── Send to GA4 Measurement Protocol
+    ├── Send to Meta Conversions API
+    └── Send to TikTok Events API
 ```
 
 ## How It Works
 
-1. **Client-side**: Base pixels handle ONLY pageview tracking
-2. **All conversion events** (add to cart, checkout, purchase) are sent to your server endpoint
-3. **Server-side**: Handles the actual API calls to GA4, Meta, and TikTok with:
-   - Proper authentication using API tokens
-   - PII hashing (SHA256) for privacy
-   - Event deduplication via event_id
-   - Parallel API calls for performance
+### Real-World Implementation Pattern
 
-## Usage Example
+1. **Client-side (React/Vue/etc)**:
+   - Initialize base pixels for pageview tracking
+   - Send `add_to_cart` events to `/api/track` when users add items
 
+2. **Server-side (Your existing routes)**:
+   - **`/api/track`**: ONLY accepts `page_view` and `add_to_cart` events
+   - **Checkout route** (`/api/checkout`): Your business logic + track `begin_checkout`
+   - **Purchase route** (`/api/purchase/complete`): Your business logic + track `purchase`
+
+3. **Important restriction**:
+   - The `/api/track` endpoint will reject `begin_checkout` and `purchase` events
+   - These MUST be tracked from your actual checkout/purchase routes
+   - This ensures tracking happens where the business logic occurs
+
+## Usage Examples
+
+### Frontend (Optional - for add_to_cart)
 ```tsx
 import { useTrackingContext } from './hooks/useTracking';
 
 function ProductPage() {
-  const { trackAddToCart, trackPurchase } = useTrackingContext();
+  const { trackAddToCart } = useTrackingContext();
 
   const handleAddToCart = async (product) => {
+    // Add to cart logic...
+    await addToCart(product);
+    
+    // Track the event
     await trackAddToCart(
-      [{
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1
-      }],
-      'USD',
+      [product],
+      'PHP',
       product.price
     );
   };
-
-  // ... rest of component
 }
+```
+
+### Backend (Required - for checkout/purchase)
+```javascript
+// Your existing checkout route
+app.post('/api/checkout', async (req, res) => {
+  const { items, user } = req.body;
+  
+  // Your checkout logic...
+  const session = await createCheckoutSession(items);
+  
+  // Track checkout event
+  const event = {
+    event_name: 'begin_checkout',
+    event_id: crypto.randomBytes(16).toString('hex'),
+    currency: 'PHP',
+    value: calculateTotal(items),
+    items: items
+  };
+  
+  await trackServerEvent(event, user, req);
+  
+  res.json({ sessionId: session.id });
+});
+
+// Your existing purchase completion route
+app.post('/api/purchase/complete', async (req, res) => {
+  const { orderId, paymentInfo } = req.body;
+  
+  // Verify payment and complete order...
+  const order = await completeOrder(orderId, paymentInfo);
+  
+  // Track purchase event  
+  const event = {
+    event_name: 'purchase',
+    event_id: crypto.randomBytes(16).toString('hex'),
+    transaction_id: orderId,
+    currency: 'PHP',
+    value: order.total,
+    items: order.items
+  };
+  
+  await trackServerEvent(event, order.user, req);
+  
+  res.json({ order });
+});
 ```
 
 ## Event Schema
@@ -193,7 +251,7 @@ npm test
    - TikTok: Generate Access Token in TikTok Ads Manager
 
 2. **Deploy Server**:
-   - Deploy `server-simple.cjs` to your Node.js hosting
+   - Deploy `server.cjs` to your Node.js hosting
    - Ensure environment variables are set
    - Use HTTPS for production
 

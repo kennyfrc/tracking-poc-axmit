@@ -54,7 +54,7 @@ export function DemoEcommerce() {
   const [couponCode, setCouponCode] = useState('');
   const [eventLog, setEventLog] = useState<string[]>([]);
 
-  const { trackAddToCart, trackBeginCheckout, trackPurchase, setUserData } = useTrackingContext();
+  const { trackAddToCart, setUserData } = useTrackingContext();
 
   // Helper to log events
   const logEvent = (message: string) => {
@@ -63,7 +63,7 @@ export function DemoEcommerce() {
 
   // Calculate cart totals
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const currency: CurrencyCode = 'USD';
+  const currency: CurrencyCode = 'PHP';
 
   // Add to cart handler
   const handleAddToCart = async (product: TrackingItem) => {
@@ -95,40 +95,68 @@ export function DemoEcommerce() {
   const handleBeginCheckout = async () => {
     if (cart.length === 0) return;
 
-    setIsCheckingOut(true);
-    
-    // Track begin checkout event
-    await trackBeginCheckout(cart, currency, cartTotal, couponCode || undefined);
-    logEvent(`Started checkout: ${cart.length} items, Total: $${cartTotal.toFixed(2)}`);
+    try {
+      // Call the actual server checkout endpoint
+      const response = await fetch('http://localhost:3001/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cart,
+          user: {
+            user_id: 'demo-user-123',
+            email: 'demo@example.com',
+            phone: '+1234567890'
+          }
+        })
+      });
+
+      const data = await response.json();
+      logEvent(`✅ Checkout started: ${data.checkoutId}`);
+      logEvent(`📊 Server tracked begin_checkout event`);
+      setIsCheckingOut(true);
+    } catch (error) {
+      logEvent(`❌ Checkout error: ${error}`);
+    }
   };
 
   // Complete purchase
   const handleCompletePurchase = async () => {
     if (cart.length === 0) return;
 
-    const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const paymentId = `PAY-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
-    // Track purchase event
-    await trackPurchase(
-      transactionId,
-      cart,
-      currency,
-      cartTotal,
-      {
-        affiliation: 'Demo Store',
-        coupon: couponCode || undefined,
-        shipping: 9.99,
-        tax: cartTotal * 0.08 // 8% tax
-      }
-    );
+    try {
+      // Call the actual server purchase endpoint
+      const response = await fetch('http://localhost:3001/api/purchase/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          paymentId,
+          items: cart,
+          user: {
+            user_id: 'demo-user-123',
+            email: 'demo@example.com',
+            phone: '+1234567890'
+          }
+        })
+      });
 
-    setLastTransactionId(transactionId);
-    setPurchaseComplete(true);
-    setCart([]);
-    setIsCheckingOut(false);
-    setCouponCode('');
-    
-    logEvent(`Purchase completed: Transaction ${transactionId}, Total: $${(cartTotal + 9.99 + (cartTotal * 0.08)).toFixed(2)}`);
+      const data = await response.json();
+      logEvent(`✅ Purchase completed: ${data.orderId}`);
+      logEvent(`📊 Server tracked purchase event`);
+      logEvent(`💰 Total: ₱${cartTotal.toFixed(2)}`);
+      
+      setLastTransactionId(data.orderId);
+      setPurchaseComplete(true);
+      setCart([]);
+      setIsCheckingOut(false);
+      setCouponCode('');
+    } catch (error) {
+      logEvent(`❌ Purchase error: ${error}`);
+    }
+
   };
 
   // Set demo user data
@@ -240,6 +268,20 @@ export function DemoEcommerce() {
           <button onClick={() => setPurchaseComplete(false)}>Continue Shopping</button>
         </div>
       )}
+
+      {/* How Tracking Works */}
+      <div className="section info-section">
+        <h3>🚀 How This Demo Works</h3>
+        <div className="info-content">
+          <p><strong>Frontend:</strong> Tracks <code>add_to_cart</code> events when you click "Add to Cart"</p>
+          <p><strong>Server:</strong> Automatically tracks conversion events:</p>
+          <ul>
+            <li>✅ <code>begin_checkout</code> tracked when you click "Proceed to Checkout"</li>
+            <li>✅ <code>purchase</code> tracked when you click "Complete Purchase"</li>
+          </ul>
+          <p>Check the server console to see the tracking API calls in real-time!</p>
+        </div>
+      </div>
 
       {/* Event Log */}
       <div className="section event-log">
@@ -429,6 +471,25 @@ export function DemoEcommerce() {
           padding: 15px;
           border-radius: 8px;
           margin-bottom: 20px;
+        }
+
+        .info-section {
+          background: #e3f2fd;
+          border: 2px solid #2196f3;
+        }
+
+        .info-content {
+          background: white;
+          padding: 15px;
+          border-radius: 8px;
+          margin-top: 10px;
+        }
+
+        .info-content code {
+          background: #f5f5f5;
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-family: monospace;
         }
 
         .event-log {

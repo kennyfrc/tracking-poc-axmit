@@ -22,3 +22,29 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*~
+*.swp
+*.swo
+
+# Coverage directory
+coverage/
+.nyc_output/
+
+# Build files
+*.tsbuildinfo
+.aider*
+.env

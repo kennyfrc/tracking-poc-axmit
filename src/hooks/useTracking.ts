@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, createContext, useContext, type ReactNode } from 'react';
 import { trackingService, type TrackingServiceConfig } from '../lib/tracking-service';
-import type { TrackingItem, CurrencyCode, ConsentState, UserData } from '../types/tracking';
+import type { TrackingItem, CurrencyCode, UserData } from '../types/tracking';
 
 // Hook configuration
 export interface UseTrackingConfig extends TrackingServiceConfig {
@@ -13,10 +13,8 @@ export interface UseTrackingReturn {
   initialize: (config?: TrackingServiceConfig) => void;
   isInitialized: boolean;
   
-  // Consent management
-  updateConsent: (consent: Partial<ConsentState>) => void;
-  acceptAllTracking: () => void;
-  rejectAllTracking: () => void;
+  // User data management
+  setUserData: (userData: Partial<UserData>) => void;
   
   // User data
   setUserData: (userData: Partial<UserData>) => void;
@@ -62,30 +60,6 @@ export function useTracking(config?: UseTrackingConfig): UseTrackingReturn {
     }
   }, [config]);
 
-  // Update consent
-  const updateConsent = useCallback((consent: Partial<ConsentState>) => {
-    trackingService.updateConsent(consent);
-  }, []);
-
-  // Accept all tracking
-  const acceptAllTracking = useCallback(() => {
-    trackingService.updateConsent({
-      ad_storage: 'granted',
-      analytics_storage: 'granted',
-      ad_user_data: 'granted',
-      ad_personalization: 'granted'
-    });
-  }, []);
-
-  // Reject all tracking
-  const rejectAllTracking = useCallback(() => {
-    trackingService.updateConsent({
-      ad_storage: 'denied',
-      analytics_storage: 'denied',
-      ad_user_data: 'denied',
-      ad_personalization: 'denied'
-    });
-  }, []);
 
   // Set user data
   const setUserData = useCallback((userData: Partial<UserData>) => {
@@ -135,9 +109,6 @@ export function useTracking(config?: UseTrackingConfig): UseTrackingReturn {
   return {
     initialize,
     isInitialized: trackingService.isInitialized(),
-    updateConsent,
-    acceptAllTracking,
-    rejectAllTracking,
     setUserData,
     trackAddToCart,
     trackBeginCheckout,
